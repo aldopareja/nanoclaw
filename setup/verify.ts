@@ -104,6 +104,15 @@ export async function run(_args: string[]): Promise<void> {
     whatsappAuth = 'authenticated';
   }
 
+  // 4b. Check Telegram auth
+  let telegramAuth = 'not_found';
+  if (fs.existsSync(envFile)) {
+    const envContent = fs.readFileSync(envFile, 'utf-8');
+    if (/^TELEGRAM_BOT_TOKEN=.+/m.test(envContent)) {
+      telegramAuth = 'configured';
+    }
+  }
+
   // 5. Check registered groups (using better-sqlite3, not sqlite3 CLI)
   let registeredGroups = 0;
   const dbPath = path.join(STORE_DIR, 'messages.db');
@@ -126,11 +135,12 @@ export async function run(_args: string[]): Promise<void> {
     mountAllowlist = 'configured';
   }
 
-  // Determine overall status
+  // Determine overall status (either WhatsApp or Telegram auth is sufficient)
+  const hasChannelAuth = whatsappAuth !== 'not_found' || telegramAuth !== 'not_found';
   const status =
     service === 'running' &&
     credentials !== 'missing' &&
-    whatsappAuth !== 'not_found' &&
+    hasChannelAuth &&
     registeredGroups > 0
       ? 'success'
       : 'failed';
@@ -142,6 +152,7 @@ export async function run(_args: string[]): Promise<void> {
     CONTAINER_RUNTIME: containerRuntime,
     CREDENTIALS: credentials,
     WHATSAPP_AUTH: whatsappAuth,
+    TELEGRAM_AUTH: telegramAuth,
     REGISTERED_GROUPS: registeredGroups,
     MOUNT_ALLOWLIST: mountAllowlist,
     STATUS: status,
