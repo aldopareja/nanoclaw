@@ -68,7 +68,14 @@ export async function run(_args: string[]): Promise<void> {
     }
   }
 
-  logger.info({ platform, wsl, appleContainer, docker, hasEnv, hasAuth, hasRegisteredGroups },
+  // Check for Telegram bot token in .env
+  let hasTelegramToken = false;
+  if (hasEnv) {
+    const envContent = fs.readFileSync(path.join(projectRoot, '.env'), 'utf-8');
+    hasTelegramToken = /^TELEGRAM_BOT_TOKEN=.+/m.test(envContent);
+  }
+
+  logger.info({ platform, wsl, appleContainer, docker, hasEnv, hasAuth, hasRegisteredGroups, hasTelegramToken },
     'Environment check complete');
 
   emitStatus('CHECK_ENVIRONMENT', {
@@ -79,6 +86,7 @@ export async function run(_args: string[]): Promise<void> {
     DOCKER: docker,
     HAS_ENV: hasEnv,
     HAS_AUTH: hasAuth,
+    HAS_TELEGRAM_TOKEN: hasTelegramToken,
     HAS_REGISTERED_GROUPS: hasRegisteredGroups,
     STATUS: 'success',
     LOG: 'logs/setup.log',
